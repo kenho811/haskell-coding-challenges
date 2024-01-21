@@ -36,6 +36,8 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , parsec
+    , text
   default-language: Haskell2010
 
 executable haskell-coding-challenges-exe
@@ -51,6 +53,8 @@ executable haskell-coding-challenges-exe
       base >=4.7 && <5
     , containers
     , haskell-coding-challenges
+    , parsec
+    , text
   default-language: Haskell2010
 
 test-suite haskell-coding-challenges-test
@@ -67,4 +71,6 @@ test-suite haskell-coding-challenges-test
       base >=4.7 && <5
     , containers
     , haskell-coding-challenges
+    , parsec
+    , text
   default-language: Haskell2010
