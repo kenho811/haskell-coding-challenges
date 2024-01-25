@@ -9,7 +9,13 @@ type Column = Integer
 type Row = Integer
 
 solution :: [(Integer, [Position])]
-solution = digitsToNumbers $ mergeDigits $ digitWithPosition 1 "2..1.hj211"
+solution = digitsNum'
+    where digitsNum = digitsToNumbers $ mergeDigits $ digitWithPosition 1 "2..1.hj211"
+          digitsNum' = [(x, getMultiCorners y)| (x, y) <- digitsNum ]
+
+
+symbolPositions :: Column -> String -> [Position]
+symbolPositions col line = [(col,y)| (x,y) <- zip line [0..], not $ isDigit x, x /= '.']
 
 
 -- includePosiiton 
