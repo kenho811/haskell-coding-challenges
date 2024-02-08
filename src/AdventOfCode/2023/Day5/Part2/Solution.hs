@@ -1,90 +1,92 @@
-module AdventOfCode.Day4.Part1.Solution where
-import Text.ParserCombinators.Parsec
-import Control.Monad (forM_)
-import qualified Data.IntMap as M
-import Data.Either (fromRight)
-import Data.Functor.Classes (Show1(liftShowsPrec))
+module AdventOfCode.Day5.Part1.Solution where
+
+import qualified Data.Text as T
+import Data.Function ((&))
 
 
 solution:: IO ()
 solution = do
-    content <- readFile "src/AdventOfCode/2023/Day4/Part1/input.txt"
-    let eithers = map parseLine $ lines content
-    forM_ eithers printCard
-    let cards = getCards eithers
-    let initialMap = initMap cards
-    let finalMap = totalNumScratchCards cards initialMap
-    print finalMap
-    print $ M.foldl' (+) 0 finalMap
+    content <- readFile "src/AdventOfCode/2023/Day5/Part1/input.txt"
+    let ls = lines content
+        seeds:: [Int]
+        seeds = map read $ tail $ words $ head ls
+        ranges = buildSeedRanges seeds
+        seedToSoil = generateListFromLines ls 4 45
+        soliToFertilizer = generateListFromLines ls 48 96
+        fertilizerToWater = generateListFromLines ls 99 130
+        waterToLight = generateListFromLines ls 133 179
+        lightToTemperature = generateListFromLines ls 182 202
+        temperatureToHumidity = generateListFromLines ls 205 241
+        humidityToLocation = generateListFromLines ls 244 279
 
-defaultCard :: Card
-defaultCard = Card {
-    cardId= -99999
-    , winningNumbers=[-1]
-    , existingNumbers=[-1]
-    , numMatches=0
-}
+        locations :: [Range]
+        locations = do
+            range <- ranges
+            return $ ([], [range]) & mapToDests seedToSoil
+                          & mapToDests soliToFertilizer
+                          & mapToDests fertilizerToWater
+                          & mapToDests waterToLight
+                          & mapToDests lightToTemperature
+                          & mapToDests temperatureToHumidity
+                          & mapToDests humidityToLocation
 
-
-printCard :: Either ParseError Card -> IO()
-printCard (Left err) = putStrLn $ "Parsing Failed: " ++ show err
-printCard (Right card) = print card
-
-getCards:: [Either ParseError Card] -> [Card]
-getCards = map (fromRight defaultCard)
-
-
-
-initMap :: [Card] -> M.IntMap Int
-initMap cs = M.fromList [let cId = cardId c in (cId , 1)| c <- cs]
+    print ranges
 
 
-totalNumScratchCards :: [Card] -> M.IntMap Int -> M.IntMap Int
-totalNumScratchCards [] m = m
-totalNumScratchCards (x:xs) m =
-     case M.lookup (cardId x) m of
-        Nothing -> m
-        Just num -> let newMap = addToMap m (cardId x + 1) (numMatches x) num in totalNumScratchCards xs newMap
+-- inclusive of being and end
+data Range = Range Int Int deriving (Show)
 
-addToMap :: M.IntMap Int -> Int -> Int -> Int -> M.IntMap Int
-addToMap m curr cnt mul
-    | cnt <= 0 = m
-    | otherwise = let newMap = M.insertWith (+) curr mul m in addToMap newMap (curr + 1) (cnt -1) mul
+-- FIXME: Create an instance for MonadRange
 
+generateListFromLines :: [String] -> Int -> Int -> [(Source, Destination, Step)]
+generateListFromLines ls from to = filteredTups
+    where filteredLs = take (to - from +1) $ drop (from - 1) ls
+          filteredTups = [ breakLineToTuples filteredLn | filteredLn <- filteredLs]
 
-data Card = Card {
-    cardId:: Int
-    ,winningNumbers:: [Int]
-    ,existingNumbers:: [Int]
-    ,numMatches:: Int
-} deriving Show
+mapToDests:: [(Destination, Source, Step)] -> ([Range],[Range]) -> [Range]
+mapToDests [] (xs,ys) = xs ++ ys
+mapToDests (x:ss) (xs, ys) =
+        let resultList = map (mapToDest x) ys in
+            mapToDests ss (concatMap fst resultList ++ xs, concatMap snd resultList ++ ys)
 
-
-numberParser:: Parser Int
-numberParser = read <$> many1 digit
-
-numberListParser :: Parser [Int]
-numberListParser = sepBy1 numberParser spaces
+mapToDest:: (Destination, Source, Step) -> Range -> ([Range], [Range])
+mapToDest (dest, src, step) (Range start end)
+    | (start < src && end < src) ||  (start > srcInclusiveEnd && end > srcInclusiveEnd) = ([],[Range start end])
+    | start >= src && end <= srcInclusiveEnd = ([Range (dest + (start - src)) (dest + (end - src))], [])
+    | start < src && end > srcInclusiveEnd  = ([Range dest destInclusiveEnd], [Range start (src -1), Range (srcInclusiveEnd + 1) end])
+    | start < src && end <= srcInclusiveEnd  = ([Range dest (dest + end - src)], [Range start (src -1)])
+    | start >= src && end > srcInclusiveEnd  = ([Range (dest + (start -src)) destInclusiveEnd], [Range (srcInclusiveEnd + 1) end])
+    | otherwise = ([],[Range start end])
+    where srcInclusiveEnd = src + step - 1
+          destInclusiveEnd = dest + step - 1
 
 
 
-cardParser :: Parser Card
-cardParser = do
-    _ <- string "Card" >> spaces
-    cardId <- numberParser
-    _ <- string ":" >> spaces
-    winningNumbers <- numberListParser
-    _ <- string "|" >> spaces
-    existingNumbers <- numberListParser
-    let numMatches = length [x | x<- existingNumbers, y<-winningNumbers, x == y]
-    return $ Card {
-        cardId=cardId
-        , winningNumbers=winningNumbers
-        , existingNumbers=existingNumbers
-        , numMatches=numMatches
-    }
-
-parseLine :: String -> Either ParseError Card
-parseLine = parse cardParser "WRONG"
 
 
+type Destination = Int
+type Source = Int
+type Step = Int
+type Seed = T.Text
+
+type SourceToDestinationMap = (Source, Destination)
+
+
+getSeeds :: T.Text -> [Seed]
+getSeeds  = T.words . last . T.splitOn (T.pack ":")
+
+breakLineToTuples :: String -> (Destination, Source, Step)
+breakLineToTuples ln = case words ln of
+    [dest, src, step] -> (read dest, read src, read step)
+    _ -> error "ERROR"
+
+
+
+
+buildSeedRange:: Int -> Int -> Range
+buildSeedRange start step = Range start (start + step - 1)
+
+buildSeedRanges :: [Int] -> [Range]
+buildSeedRanges [] = []
+buildSeedRanges [_] = error "bad input."
+buildSeedRanges (x:y:ss) = buildSeedRange x y : buildSeedRanges ss
