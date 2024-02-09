@@ -35,7 +35,7 @@ solution = do
     print . minimumSeed $ locations
 
 
--- inclusive of being and end
+-- Closed Range on both lower and upper bound
 data Range = Range {
     lower:: Int
     ,upper:: Int
