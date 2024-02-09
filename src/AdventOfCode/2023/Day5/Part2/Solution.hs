@@ -22,33 +22,44 @@ solution = do
         locations :: [Range]
         locations = do
             range <- ranges
-            return $ ([], [range]) & mapToDests seedToSoil
-                          & mapToDests soliToFertilizer
-                          & mapToDests fertilizerToWater
-                          & mapToDests waterToLight
-                          & mapToDests lightToTemperature
-                          & mapToDests temperatureToHumidity
-                          & mapToDests humidityToLocation
+            r1 <- mapToDests seedToSoil range
+            r2 <- mapToDests soliToFertilizer r1
+            r3 <- mapToDests fertilizerToWater r2
+            r4 <- mapToDests waterToLight r3
+            r5 <- mapToDests lightToTemperature r4
+            r6 <- mapToDests temperatureToHumidity r5
+            mapToDests humidityToLocation r6
 
     print ranges
+    print locations
+    print . minimumSeed $ locations
 
 
 -- inclusive of being and end
-data Range = Range Int Int deriving (Show)
+data Range = Range {
+    lower:: Int
+    ,upper:: Int
+ } deriving (Show)
 
--- FIXME: Create an instance for MonadRange
+
+minimumSeed :: [Range] -> Int
+minimumSeed = minimum . map lower
+
 
 generateListFromLines :: [String] -> Int -> Int -> [(Source, Destination, Step)]
 generateListFromLines ls from to = filteredTups
     where filteredLs = take (to - from +1) $ drop (from - 1) ls
           filteredTups = [ breakLineToTuples filteredLn | filteredLn <- filteredLs]
 
-mapToDests:: [(Destination, Source, Step)] -> ([Range],[Range]) -> [Range]
-mapToDests [] (xs,ys) = xs ++ ys
-mapToDests (x:ss) (xs, ys) =
-        let resultList = map (mapToDest x) ys in
-            mapToDests ss (concatMap fst resultList ++ xs, concatMap snd resultList ++ ys)
+-- List Monad
+mapToDests:: [(Destination, Source, Step)] -> Range -> [Range]
+mapToDests [] y = [y]
+mapToDests (x:xs) y =
+        let (doneRanges, remainingRanges) = mapToDest x y in
+            doneRanges ++ concatMap (mapToDests xs) remainingRanges
 
+
+-- Intermediary Step 
 mapToDest:: (Destination, Source, Step) -> Range -> ([Range], [Range])
 mapToDest (dest, src, step) (Range start end)
     | (start < src && end < src) ||  (start > srcInclusiveEnd && end > srcInclusiveEnd) = ([],[Range start end])
