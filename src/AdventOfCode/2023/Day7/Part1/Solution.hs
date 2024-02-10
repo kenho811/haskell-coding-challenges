@@ -14,15 +14,15 @@ solution = do
                   convertType l = (parseHand . head . words $ l , read (words l!!1))
         sortedHandAndBids = sortWith fst handAndBids
 
-        -- -- debug
-        -- convertedBackHandAndBids:: [(String, String)]
-        -- convertedBackHandAndBids = zip (map (unparseHand . fst) sortedHandAndBids) (map (show . snd) sortedHandAndBids)
+        -- debug
+        convertedBackHandAndBids:: [(String, String)]
+        convertedBackHandAndBids = zip (map (unparseHand . fst) sortedHandAndBids) (map (show . snd) sortedHandAndBids)
 
-        -- convertedBackHandAndBidsString :: String
-        -- convertedBackHandAndBidsString = unlines $ concatMap (\(a, b) -> [a ++ " " ++ b]) convertedBackHandAndBids
+        convertedBackHandAndBidsString :: String
+        convertedBackHandAndBidsString = unlines $ concatMap (\(a, b) -> [a ++ " " ++ b]) convertedBackHandAndBids
 
 
-    -- writeFile "src/AdventOfCode/2023/Day7/Part1/output.txt" convertedBackHandAndBidsString
+    writeFile "src/AdventOfCode/2023/Day7/Part1/output.txt" convertedBackHandAndBidsString
 
     print sortedHandAndBids
     -- print $  zip (map snd sortedHandAndBids) [1..]
