@@ -14,7 +14,6 @@ solution = do
         showlaceArea = calculateShoelaceArea showlaceCoordinates
         interiorArea = calculateInteriorArea showlaceArea (length tracedCoordinates)
 
-    -- print coordinateMap'
     print startingPosition
     print . take 10  $ tracedCoordinates
     print . take 10 $ showlaceCoordinates
@@ -40,10 +39,6 @@ calculateInteriorArea :: Double -> Int -> Double
 calculateInteriorArea area numBoundaryPoints = (area + 1) - (fromIntegral numBoundaryPoints / 2)
 
 
--- isTileWithin :: Coordinate -> [Coordinate] -> Bool
--- isTileWithin c@(x1, y1) tracedCoordinates =
---     not (c `elem` filteredTracedCoordinates || even (length filteredTracedCoordinates))
---     where filteredTracedCoordinates = filter (\(x2, y2) -> x1 == x2 && y1 >= y2) tracedCoordinates
 
 
 traceCoordinates :: CoordinateMap -> Coordinate -> (Coordinate, Coordinate) -> [Coordinate] -> [Coordinate]
