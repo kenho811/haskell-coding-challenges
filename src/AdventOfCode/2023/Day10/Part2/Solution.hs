@@ -1,20 +1,25 @@
-module AdventOfCode.Day10.Part1.Solution where
+module AdventOfCode.Day10.Part2.Solution where
 
 import qualified Data.Map as Map
 
 solution :: IO()
 solution = do
-    content <- readFile "src/AdventOfCode/2023/Day10/Part1/input.txt"
+    content <- readFile "src/AdventOfCode/2023/Day10/Part2/input.txt"
     let coordinateMap = parseMap . lines $ content
         startingPosition = getStartingCoordinate . lines $ content
-        coordinateMap' = Map.insert startingPosition [North, South] coordinateMap -- override initial direction manually
-        totalSteps = getSteps coordinateMap' startingPosition ((-1,-1), startingPosition) 0
+        coordinateMap' = Map.insert startingPosition [South, North] coordinateMap -- override initial direction manually
+        tracedCoordinates = traceCoordinates coordinateMap' startingPosition ((-1,-1), startingPosition) []
+
+        showlaceCoordinates = reverse $ last tracedCoordinates : tracedCoordinates -- append last element to front for showlace algo. reverse to get clockwise direction.
+        showlaceArea = calculateShoelaceArea showlaceCoordinates
+        interiorArea = calculateInteriorArea showlaceArea (length tracedCoordinates)
 
     -- print coordinateMap'
-    print . take 10 . Map.toList $ coordinateMap'
-    print  totalSteps -- floor division
-    -- print startingPosition
-    print . (`div` 2) $ totalSteps -- floor division
+    print startingPosition
+    print . take 10  $ tracedCoordinates
+    print . take 10 $ showlaceCoordinates
+    print showlaceArea
+    print interiorArea
 
 
 type Pos = Int
@@ -27,11 +32,25 @@ data Direction = North
                  | Unknown
                 deriving (Show, Eq)
 
-getSteps :: CoordinateMap -> Coordinate -> (Coordinate, Coordinate) -> Int -> Int
-getSteps mp startingCoordinate (prevCoordinate, currCoordinate) acc =
+calculateShoelaceArea :: [Coordinate] -> Double
+calculateShoelaceArea ((x1,y1):c2@(x2,y2): cs) = 0.5 * (fromIntegral y1 + fromIntegral y2) * (fromIntegral x1 - fromIntegral x2) + calculateShoelaceArea (c2:cs)
+calculateShoelaceArea [_] = 0 -- base
+
+calculateInteriorArea :: Double -> Int -> Double
+calculateInteriorArea area numBoundaryPoints = (area + 1) - (fromIntegral numBoundaryPoints / 2)
+
+
+-- isTileWithin :: Coordinate -> [Coordinate] -> Bool
+-- isTileWithin c@(x1, y1) tracedCoordinates =
+--     not (c `elem` filteredTracedCoordinates || even (length filteredTracedCoordinates))
+--     where filteredTracedCoordinates = filter (\(x2, y2) -> x1 == x2 && y1 >= y2) tracedCoordinates
+
+
+traceCoordinates :: CoordinateMap -> Coordinate -> (Coordinate, Coordinate) -> [Coordinate] -> [Coordinate]
+traceCoordinates mp startingCoordinate (prevCoordinate, currCoordinate) xs =
     if nextCoordinate /= startingCoordinate
-        then getSteps mp startingCoordinate (currCoordinate, nextCoordinate) (acc + 1)
-        else acc + 1 -- terminate when it returns to starting point
+        then traceCoordinates mp startingCoordinate (currCoordinate, nextCoordinate) (currCoordinate:xs)
+        else currCoordinate:xs -- terminate when it returns to starting point
     where nextCoordinates = getNextCoordinates currCoordinate mp
           nextCoordinate = head . filter (/= prevCoordinate)   $ nextCoordinates
 
