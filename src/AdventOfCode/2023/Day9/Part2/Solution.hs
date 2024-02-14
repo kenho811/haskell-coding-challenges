@@ -1,20 +1,20 @@
-module AdventOfCode.Day9.Part1.Solution where
+module AdventOfCode.Day9.Part2.Solution where
 
 solution :: IO()
 solution = do
-    content <- readFile "src/AdventOfCode/2023/Day9/Part1/input.txt"
+    content <- readFile "src/AdventOfCode/2023/Day9/Part2/input.txt"
     let seqs :: [[Int]]
         seqs = map (map read . words) . lines $ content
-        newSeqs = map addOnePredictionForwards seqs
+        newSeqs = map addOnePredictionBackwards seqs
     print seqs
 
-    print . sum . map last $ newSeqs
+    print . sum . map head $ newSeqs
 
 
-addOnePredictionForwards :: [Int] -> [Int] 
-addOnePredictionForwards xs = xs ++ [newLastElement]
+addOnePredictionBackwards :: [Int] -> [Int] 
+addOnePredictionBackwards xs = newFirstElement : xs
     where allSeqs = reverse $ xs : getAllSeqs xs
-          newLastElement =  foldl (\ acc ys -> last ys + acc) 0 allSeqs
+          newFirstElement =  foldl (\ acc ys -> head ys - acc) 0 allSeqs
 
 
 getAllSeqs :: [Int] -> [[Int]]
