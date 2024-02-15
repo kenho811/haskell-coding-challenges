@@ -1,14 +1,15 @@
-module AdventOfCode.Day10.Part1.Solution where
-import Data.List (transpose)
+module AdventOfCode.Day11.Part1.Solution where
+import Data.List (transpose, sort)
 
 
 solution :: IO()
 solution = do
-    -- content <- readFile "src/AdventOfCode/2023/Day11/Part1/sample.txt"
-    content <- readFile "src/AdventOfCode/2023/Day11/Part1/input.txt"
+    content <- readFile "src/AdventOfCode/2023/Day11/Part1/sample.txt"
+    -- content <- readFile "src/AdventOfCode/2023/Day11/Part1/input.txt"
     let cosmicGrid :: CosmicGrid
         cosmicGrid = map (map parseCosmicObject) . lines $ content
-        expandedCosmicGrid = expandCosmicGrid cosmicGrid
+        expandedCosmicGrid = expandCosmicGrid 2 cosmicGrid
+        -- expandedCosmicGrid = expandCosmicGrid 10 cosmicGrid
 
         galaxyCoordinates = getCosmicObjectCoordinates CosmicGalaxy expandedCosmicGrid
         galaxyCoordinatesPairs = getCombosByTwo galaxyCoordinates
@@ -54,12 +55,12 @@ getCombosByTwo (x:xs) = getCombosByTwo' x xs ++ getCombosByTwo xs
           getCombosByTwo' _ [] = []
 getCombosByTwo [] = []
 
-expandCosmicGrid :: CosmicGrid -> CosmicGrid
-expandCosmicGrid = transpose . expandCosmicGrid' . transpose . expandCosmicGrid'
+expandCosmicGrid :: Int -> CosmicGrid -> CosmicGrid
+expandCosmicGrid factor = transpose . expandCosmicGrid' . transpose . expandCosmicGrid'
     where expandCosmicGrid' :: CosmicGrid -> CosmicGrid
           expandCosmicGrid' = reverse . foldr (
                 \xs acc -> if willExpand xs
-                    then xs: xs : acc
+                    then replicate factor xs ++ acc
                     else xs: acc
             ) [[]]
           willExpand :: [CosmicObject] -> Bool
