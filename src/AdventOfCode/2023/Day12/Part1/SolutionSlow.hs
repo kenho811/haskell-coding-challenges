@@ -1,4 +1,6 @@
-module AdventOfCode.Day12.Part1.Solution where
+module AdventOfCode.Day12.Part1.SolutionSlow where
+
+{- Generate all combinations then filter. Slowest-}
 
 import qualified Data.Text as T
 import Data.List.GroupBy ( groupBy ) 
