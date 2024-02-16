@@ -1,15 +1,13 @@
 module AdventOfCode.Day12.Part2.Solution where
 
 import qualified Data.Text as T
-import Data.List.GroupBy ( groupBy )
-import Data.Monoid (Sum(..))
-import Data.List (intersperse, intercalate)
+import Data.List (intercalate)
 
 
 solution :: IO ()
 solution = do
-    content <- readFile "src/AdventOfCode/2023/Day12/Part2/input.txt"
-    -- content <- readFile "src/AdventOfCode/2023/Day12/Part2/sample.txt"
+    -- content <- readFile "src/AdventOfCode/2023/Day12/Part2/input.txt"
+    content <- readFile "src/AdventOfCode/2023/Day12/Part2/sample.txt"
     let
         conditionsAndBrokenNumsList :: [(Conditions, BrokenNums)]
         conditionsAndBrokenNumsList = zip conditionsListUpdated brokenNumsList
@@ -27,13 +25,13 @@ solution = do
         brokenNumsList' = map (concat . replicate 5) brokenNumsList
 
         numMatchingPossibilities :: [Int]
-        numMatchingPossibilities =  map (\(cs, ns) -> getNumMatches cs ns 0 ) conditionsAndBrokenNumsList
-        numMatchingPossibilities' =  map (\(cs, ns) -> getNumMatches cs ns 0 ) conditionsAndBrokenNumsList'
+        numMatchingPossibilities =  map (\(cs, ns) -> length $ getMatches cs ns 0 [] ) conditionsAndBrokenNumsList
+        numMatchingPossibilities' =  map (\(cs, ns) -> length $ getMatches cs ns 0 [] ) conditionsAndBrokenNumsList'
 
     -- print  conditionsList
     -- print  conditionsList'
-    -- print  conditionsListUpdated'
-    -- print  brokenNumsList'
+    print  conditionsListUpdated'
+    print  brokenNumsList'
 
     -- print  numMatchingPossibilities
     print  numMatchingPossibilities'
@@ -67,15 +65,3 @@ getMatches (c:cs) (n:ns) cnt acc = case c of
     Unknown -> getMatches (Operational:cs) (n:ns) cnt acc ++ getMatches (Broken:cs) (n:ns) cnt acc
 
 
-getNumMatches :: Conditions -> BrokenNums -> Int -> Int 
-getNumMatches [] ns _  = if null ns then 1 else 0 
-getNumMatches cs [] _  = if Broken `notElem` cs then 1 else 0 
-getNumMatches (c:cs) (n:ns) cnt  = case c of
-    Operational ->  if cnt == 0 -- no previous broken states. Continue
-                    then  getNumMatches cs (n:ns) 0
-                    else
-                        if cnt == n  -- check if previous non-zero continguous BrokenNum matches expected one
-                        then getNumMatches cs ns 0 -- continue
-                        else 0 -- Not Match. Therefore abort.
-    Broken -> getNumMatches cs (n:ns) (cnt + 1)
-    Unknown -> getNumMatches (Operational:cs) (n:ns) cnt + getNumMatches (Broken:cs) (n:ns) cnt

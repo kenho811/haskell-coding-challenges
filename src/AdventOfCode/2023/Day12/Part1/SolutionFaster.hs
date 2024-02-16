@@ -1,32 +1,34 @@
 module AdventOfCode.Day12.Part1.SolutionFaster where
 
-{- Greedy Algorithm inspect each spring and stop when first failure is met-}
-
 import qualified Data.Text as T
-import Data.List.GroupBy ( groupBy ) 
+import Data.List (intercalate)
 
 
 solution :: IO ()
 solution = do
     content <- readFile "src/AdventOfCode/2023/Day12/Part1/input.txt"
     -- content <- readFile "src/AdventOfCode/2023/Day12/Part1/sample.txt"
-    let 
+    let
         conditionsAndBrokenNumsList :: [(Conditions, BrokenNums)]
-        conditionsAndBrokenNumsList = zip conditionsList brokenNumsList
+        conditionsAndBrokenNumsList = zip conditionsListUpdated brokenNumsList
 
         conditionsList :: [Conditions]
-        conditionsList = map (map parseCondition . head . words) . lines $ content
+        -- add final Operational state to ease algorithm
+        conditionsList = map ( map parseCondition . head . words) . lines $ content
+        conditionsListUpdated = map (++ [Operational]) conditionsList
 
         brokenNumsList :: [BrokenNums]
         brokenNumsList = map (map (read . T.unpack) . T.splitOn (T.pack ",") . last . T.words) . T.lines . T.pack $ content
 
         numMatchingPossibilities :: [Int]
-        numMatchingPossibilities =  map (uncurry getNumMatches) conditionsAndBrokenNumsList
+        numMatchingPossibilities =  map (\(cs, ns) -> length $ getMatches cs ns 0 [] ) conditionsAndBrokenNumsList
 
+    -- print  conditionsList
+    -- print  conditionsList'
+    print  conditionsListUpdated
+    print  brokenNumsList
 
-    -- print conditions
-    -- print brokenNums
-    -- print .  map (generatePossibleConditions . fst) $ conditionsAndBrokenNumsList
+    -- print  numMatchingPossibilities
     print  numMatchingPossibilities
     print . sum $ numMatchingPossibilities
 
@@ -37,38 +39,24 @@ data Condition = Operational
                  | Broken
                  | Unknown deriving (Show, Eq)
 
-getNumMatches :: Conditions -> BrokenNums -> Int
-getNumMatches cs targetBrokenNums = length . filter (==targetBrokenNums) $ possibleBrokenNums
-    where possibleConditions = generatePossibleConditions cs
-          possibleBrokenNums = map getBrokenNum possibleConditions  
-
-
-getBrokenNum :: Conditions -> BrokenNums
-getBrokenNum = map length 
-              . groupBy (\a b -> b == a+1 ) 
-              . map fst 
-              . filter (\(_, c) -> c == Broken ) 
-              .  zip [0..]
-
 parseCondition :: Char -> Condition
 parseCondition '.' = Operational
 parseCondition '#' = Broken
 parseCondition '?' = Unknown
 parseCondition x = error $ "Unknown Condition " ++ show x
 
-generatePossibleConditions :: [Condition] -> [[Condition]]
-generatePossibleConditions  = foldr (
-    \c acc -> case c of
-        Unknown -> [ c': xs | xs <- acc, c' <- [Operational, Broken]]
-        _ -> [c: xs | xs <- acc]
-    ) [[]]
+
+getMatches :: Conditions -> BrokenNums -> Int -> Conditions -> [Conditions]
+getMatches [] ns _ acc  = [reverse acc | null ns]
+getMatches cs [] _  acc = [reverse (cs ++ acc) | Broken `notElem` cs]
+getMatches (c:cs) (n:ns) cnt acc = case c of
+    Operational ->  if cnt == 0 -- no previous broken states. Continue
+                    then  getMatches cs (n:ns) 0 (c:acc)
+                    else
+                        if cnt == n  -- check if previous non-zero continguous BrokenNum matches expected one
+                        then getMatches cs ns 0 (c:acc) -- continue
+                        else [] -- Not Match. Therefore abort.
+    Broken -> getMatches cs (n:ns) (cnt + 1) (c:acc)
+    Unknown -> getMatches (Operational:cs) (n:ns) cnt acc ++ getMatches (Broken:cs) (n:ns) cnt acc
 
 
-simpleTest :: IO ()
-simpleTest = do
-    let conditions = map parseCondition "???.###"
-        possibleConditions = generatePossibleConditions conditions
-        possibleBrokenNums = map getBrokenNum possibleConditions
-    print conditions
-    print possibleConditions
-    print possibleBrokenNums
