@@ -1,8 +1,6 @@
 module AdventOfCode.Day12.Part1.SolutionFaster where
 
 import qualified Data.Text as T
-import Data.List (intercalate)
-
 
 solution :: IO ()
 solution = do
