@@ -25,6 +25,7 @@ dependencies:
 - text
 - parsec
 - groupBy==0.1.0.0
+- mtl
 
 ghc-options:
 - -Wall
