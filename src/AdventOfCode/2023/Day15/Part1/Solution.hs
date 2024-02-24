@@ -1,9 +1,7 @@
 {-# Language OverloadedStrings #-}
-module AdventOfCode.Day14.Part1.Solution where
+module AdventOfCode.Day15.Part1.Solution where
 
 import qualified Data.Text as T
-import qualified Data.Ord as O
-import Data.List (sortBy, intercalate, transpose)
 import Data.Char (ord)
 
 
