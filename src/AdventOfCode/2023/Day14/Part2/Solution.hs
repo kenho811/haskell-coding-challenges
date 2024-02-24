@@ -5,45 +5,44 @@ import qualified Data.Text as T
 import qualified Data.Ord as O
 import Data.List (sortBy, intercalate, transpose)
 import qualified Data.Map as Map
-import Data.Foldable (foldl')
-import Control.Monad.State (State, get, put, runState, execState, evalState)
+import Control.Monad.State (State, get, runState)
 import Control.Monad.State.Lazy (modify)
 import Data.Maybe (fromJust)
+import Control.Monad.Writer (Writer,  tell, runWriter, execWriter)
 
 
-
-
-solution :: IO()
+solution:: IO ()
 solution = do
-    let
-        inputFilePath = "src/AdventOfCode/2023/Day14/Part2/sample.txt"
-        -- inputFilePath = "src/AdventOfCode/2023/Day14/Part2/input.txt"
-        -- outputFilePath =  "src/AdventOfCode/2023/Day14/Part2/sampleOutputOnce.txt"
-        -- outputFilePath =  "src/AdventOfCode/2023/Day14/Part2/sampleOutputTwice.txt"
-        outputFilePath =  "src/AdventOfCode/2023/Day14/Part2/inputOutput.txt"
+    platform  <- baseSolution
+    let outputFilePath =  "src/AdventOfCode/2023/Day14/Part2/inputOutputPlatform.txt"
+        loopIdx = fromJust $ hareAndTortoise platform platform 100000 0
 
-
-    content <- readFile inputFilePath
-    let platform  = lines content
-        loopIdx = hazeAndTurtleAlgo platform platform 100000 0
-
-        numTimes =  1000000000 `mod` fromJust loopIdx
+        offset = loopIdx
+        cycleLength = loopIdx
+        numTimes = (1000000000  - offset) `mod` cycleLength + offset
         combo = runState (spinPlatform' numTimes 0 platform) Map.empty
         spunPlatform = fst combo
-        memo = snd combo
-        load = calculateLoad spunPlatform
+    writeFile outputFilePath (unlines spunPlatform)
+    print (calculateLoad spunPlatform)
 
-    print memo
-    print loopIdx
-    print spunPlatform
-    print $ Map.lookup spunPlatform memo
-    print "dumping"
-    dumpTransformed spunPlatform outputFilePath
-    -- print . unlines $ slidedToNorthPlatform
-    print load
+baseSolution :: IO Platform
+baseSolution = do
+    let inputFilePath = "src/AdventOfCode/2023/Day14/Part2/input.txt"
+    content <- readFile inputFilePath
+    return $ lines content
+
+-- examine pattern of load
+printFirst1000Loads:: IO ()
+printFirst1000Loads = do
+    platform  <- baseSolution
+    let outputFilePath =  "src/AdventOfCode/2023/Day14/Part2/inputOutputLoad.txt"
+        output = runWriter (spinPlatform'' 1000 platform)
+    writeFile outputFilePath (unlines . map show . snd $ output)
+
 
 type Rocks = String
 type Platform = [Rocks]
+
 
 data TwoDimensionalDirection = North
                  | West
@@ -56,18 +55,27 @@ data OneDimensionalDirection = OneDLeft
 dumpTransformed :: Platform -> FilePath -> IO()
 dumpTransformed p fp = writeFile fp (unlines p)
 
-hazeAndTurtleAlgo:: Platform -> Platform -> Int -> Int -> Maybe Int
-hazeAndTurtleAlgo turtleP hazeP maxRuns cnt =
+hareAndTortoise:: Platform -> Platform -> Int -> Int -> Maybe Int
+hareAndTortoise turtleP hazeP maxRuns cnt =
     if maxRuns == cnt
         then Nothing
         else let turtleP' = spinPlatform turtleP
                  hazeP' = spinPlatform . spinPlatform $ hazeP in
-             if turtleP' == hazeP'
+             if concat turtleP' == concat hazeP'
                 then return $ cnt + 1
-                else hazeAndTurtleAlgo turtleP' hazeP' maxRuns (cnt+1)
+                else hareAndTortoise turtleP' hazeP' maxRuns (cnt+1)
 
 
 
+
+spinPlatform'' :: Int -> Platform -> Writer [Int] Platform
+spinPlatform'' spinNumTimes p
+    | spinNumTimes < 0 = error "Number of Spins must be non-negative!"
+    | spinNumTimes == 0 = return p
+    | otherwise = let p' = spinPlatform p in
+            do 
+            tell [calculateLoad p']
+            spinPlatform'' (spinNumTimes -1 ) p'
 
 
 
